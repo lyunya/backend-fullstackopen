@@ -3,17 +3,10 @@ const Note = require('../models/note')
 const User = require('../models/user')
 
 notesRouter.get('/', async (request, response) => {
-  const notes = await Note.find({})
-  response.json(notes.map(note => note.toJSON()))
-})
+  const notes = await Note
+    .find({}).populate('user', { username: 1, name: 1 })
 
-notesRouter.get('/:id', async (request, response) => {
-  const note = await Note.findById(request.params.id)
-  if (note) {
-    response.json(note.toJSON())
-  } else {
-    response.status(404).end()
-  }
+  response.json(notes.map(note => note.toJSON()))
 })
 
 notesRouter.post('/', async (request, response) => {
@@ -31,8 +24,17 @@ notesRouter.post('/', async (request, response) => {
   const savedNote = await note.save()
   user.notes = user.notes.concat(savedNote._id)
   await user.save()
-  
+
   response.json(savedNote.toJSON())
+})
+
+notesRouter.get('/:id', async (request, response) => {
+  const note = await Note.findById(request.params.id)
+  if (note) {
+    response.json(note.toJSON())
+  } else {
+    response.status(404).end()
+  }
 })
 
 notesRouter.put('/:id', (request, response, next) => {
@@ -49,7 +51,6 @@ notesRouter.put('/:id', (request, response, next) => {
     })
     .catch(error => next(error))
 })
-
 
 notesRouter.delete('/:id', async (request, response) => {
   await Note.findByIdAndRemove(request.params.id)
